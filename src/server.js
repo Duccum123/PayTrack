@@ -3,13 +3,13 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 const cors = require('cors');
 
-const routesApp = require('./routes/routesApp');
+const routeInit = require('./routes/routesApp');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/api', routesApp);
+routeInit(app);
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {

@@ -11,7 +11,7 @@ const employeeSchema = new mongoose.Schema({
   gender: { type: String, enum:['Nam', 'Nữ'], required: true },
   dateOfBirth: { type: Date, required: true },
   startDate: { type: Date, required: true },
-  usserId: { type: mongoose.Schema.ObjectId, ref: "User", required: true },
+  userId: { type: mongoose.Schema.ObjectId, ref: "User", required: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Employee', employeeSchema);
