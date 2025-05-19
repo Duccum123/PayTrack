@@ -14,7 +14,5 @@ router.post('/', protect, restrictTo('admin'), EmployeeController.createEmployee
 router.put('/:id', protect, restrictTo('admin'), EmployeeController.updateEmployee);
 // Route to delete an employee by ID
 router.delete('/:id', protect, restrictTo('admin'), EmployeeController.deleteEmployee);
-// Route to get employees by user ID
-router.get('/getByUserId/:userId', protect, restrictTo('admin'), EmployeeController.getEmployeesByUserId);
 
 module.exports = router;

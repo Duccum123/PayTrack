@@ -1,4 +1,5 @@
 const Employee = require('../models/Employees');
+const User = require('../models/Users');
 
 class EmployeeController {
   // Lấy tất cả nhân viên
@@ -24,38 +25,32 @@ class EmployeeController {
       res.status(500).json({ message: 'Error fetching employee', error });
     }
   }
-
-  // Lấy nhân viên theo userId
-  static async getEmployeesByUserId(req, res) {
-    const { userId } = req.params;
-    try {
-      const employee = await Employee.findOne({ userId });
-      if (!employee) {
-        return res.status(404).json({ message: 'Employee not found' });
-      }
-      res.status(200).json(employee);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching employee', error });
-    }
-  }
-
   // Tạo nhân viên mới
   static async createEmployee(req, res) {
     const {
       name, email, phone, position, department,
       salaryCoefficient, allowance, gender,
-      dateOfBirth, startDate, userId
+      dateOfBirth, startDate
     } = req.body;
-
+    console.log(req.body);
+    
+      // Tạo mới nhân viên
     try {
       const newEmployee = new Employee({
         name, email, phone, position, department,
         salaryCoefficient, allowance, gender,
-        dateOfBirth, startDate, userId
+        dateOfBirth, startDate
       });
       await newEmployee.save();
-      res.status(201).json(newEmployee);
+      const emplyeeId = newEmployee._id;
+      const username  = email;
+      const newUser = new User({
+        username, password: 'abc123', role: 'user', emplyeeId
+      });
+      await newUser.save();
+      res.status(201).json(newUser.populate('emplyeeId'));
     } catch (error) {
+      console.error('Error creating employee:', error);
       res.status(500).json({ message: 'Error creating employee', error });
     }
   }
