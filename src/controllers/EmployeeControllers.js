@@ -5,7 +5,7 @@ class EmployeeController {
   // Lấy tất cả nhân viên
   static async getAllEmployees(req, res) {
     try {
-      const employees = await Employee.find().populate('userId');
+      const employees = await Employee.find();
       res.status(200).json(employees);
     } catch (error) {
       res.status(500).json({ message: 'Error fetching employees', error });
