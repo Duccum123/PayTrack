@@ -1,5 +1,5 @@
 const Salary = require('../models/Salaries');
-
+const Attendance_logs = require('../models/Attendance_logs');
 class SalaryController {
   // Lấy tất cả bảng lương
   static async getAllSalaries(req, res) {
@@ -39,14 +39,45 @@ class SalaryController {
   // Tao bảng lương mới
   static async createSalary(req, res) {
     const {
-      employeeId, salaryCoefficient, allowance, month, basicSalary,
-      bonus, penalty, totalWorkingDays, totalWorkingHours, totalSalary
+      employeeId,
+      month,
+      year,
+      bonus,
+      noteBonus,
+      penalty,
+      notePenalty,
+      totalSalary,
     } = req.body;
+    let totalWorkingDays = 0;
+    let totalWorkingHours = 0;
+    const startDate = new Date(year, month - 1, 1); // ngày đầu tháng
+    const endDate = new Date(year, month, 1);       // ngày đầu tháng sau
 
+    const attendances = await Attendance_logs.find({
+      employeeId,
+      date: { $gte: startDate, $lt: endDate }
+    });
+    attendances.forEach(attendance => {
+      if(attendance.status == "Present") {
+        totalWorkingDays += 1;
+        totalWorkingHours += 8;
+      } else if(attendance.status == "Half") {
+        totalWorkingDays += 1;
+        totalWorkingHours += 4;
+      }
+    });
     try {
       const newSalary = new Salary({
-        employeeId, salaryCoefficient, allowance, month, basicSalary,
-        bonus, penalty, totalWorkingDays, totalWorkingHours, totalSalary
+        employeeId,
+        month,
+        year,
+        bonus,
+        noteBonus,
+        penalty,
+        notePenalty,
+        totalWorkingDays,
+        totalWorkingHours,
+        totalSalary,
       });
       await newSalary.save();
       res.status(201).json(newSalary);

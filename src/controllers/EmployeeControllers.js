@@ -29,7 +29,7 @@ class EmployeeController {
   static async createEmployee(req, res) {
     const {
       name, email, phone, position, department,
-      salaryCoefficient, allowance, gender,
+      basicSalary, allowance, gender,
       dateOfBirth, startDate
     } = req.body;
     console.log(req.body);
@@ -38,7 +38,7 @@ class EmployeeController {
     try {
       const newEmployee = new Employee({
         name, email, phone, position, department,
-        salaryCoefficient, allowance, gender,
+        basicSalary, allowance, gender,
         dateOfBirth, startDate
       });
       await newEmployee.save();

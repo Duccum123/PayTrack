@@ -10,6 +10,8 @@ router.get('/', protect, reStrictTo('admin'), AttendanceController.getAllAttenda
 router.get('/:id', protect, reStrictTo('admin'), AttendanceController.getAttendanceLogById);
 // Lấy bảng chấm công theo employeeId
 router.get('/employee/:employeeId', protect, reStrictTo('admin'), AttendanceController.getAttendanceLogsByEmployeeId);
+// Lấy bảng chấm công theo ngày
+router.post('/date', protect, reStrictTo('admin'), AttendanceController.getAttendanceLogsByDate);
 // Tao bảng chấm công mới
 router.post('/', protect, reStrictTo('admin'), AttendanceController.createAttendanceLog);
 // Cập nhật bảng chấm công
