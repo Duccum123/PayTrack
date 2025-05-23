@@ -1,6 +1,7 @@
 const User = require('../models/Users');
 const jwt = require('jsonwebtoken');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
+const Employee = require('../models/Employees')
 require('dotenv').config();
 
 class UserController {
@@ -94,6 +95,24 @@ class UserController {
       res.status(200).json(users);
     } catch (error) {
       res.status(500).json({ message: 'Error fetching users', error });
+    }
+  }
+  static async getUsersByMangerId(req, res) {
+    const { id } = req.params
+    try {
+      const employees = await Employee.find({ managerId: id}).select('_id')
+      const employeeIds = employees.map(employ => employ._id)
+
+      const users = await User.find({
+        employeeId: {$in : employeeIds}
+      }).populate('employeeId')
+      if(!users) {
+        res.status(404).json({message : 'Users not found', error})
+      }
+      users.push(await User.findById(id))
+      res.status(200).json(users);
+    } catch(error) {
+      res.status(500).json({message : 'Erro fetching user', error})
     }
   }
 

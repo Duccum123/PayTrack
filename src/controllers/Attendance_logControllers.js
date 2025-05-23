@@ -1,5 +1,5 @@
 const AttendanceLog = require('../models/Attendance_logs');
-
+const Employee = require('../models/Employees')
 class AttendanceLogController {
   // Lấy tất cả bản ghi chấm công
   static async getAllAttendanceLogs(req, res) {
@@ -35,17 +35,26 @@ class AttendanceLogController {
     }
   }
   static async getAttendanceLogsByDate(req, res) {
-    const { date } = req.body;
-    try {
-      const attendanceLogs = await AttendanceLog.find({ date }).populate('employeeId');
-      if (!attendanceLogs) {
-        return res.status(404).json({ message: 'Attendance logs not found' });
-      }
-      res.status(200).json(attendanceLogs);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching attendance logs', error });
+  const { date, managerId } = req.body;
+  try {
+    // Lấy danh sách employeeId theo managerId
+    const employees = await Employee.find({ managerId }).select('_id');
+    const employeeIds = employees.map(emp => emp._id);
+
+    // Lấy attendance logs theo date và employeeId thuộc danh sách trên
+    const attendanceLogs = await AttendanceLog.find({
+      date: new Date(date),
+      employeeId: { $in: employeeIds }
+    }).populate('employeeId');
+
+    if (!attendanceLogs || attendanceLogs.length === 0) {
+      return res.status(404).json({ message: 'Attendance logs not found' });
     }
+    res.status(200).json(attendanceLogs);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching attendance logs', error });
   }
+}
   static async createAttendanceLog(req, res) {
     try {
       const { employeeId, date, status } = req.body;

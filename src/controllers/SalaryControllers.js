@@ -1,5 +1,6 @@
 const Salary = require('../models/Salaries');
 const Attendance_logs = require('../models/Attendance_logs');
+const Employee = require('../models/Employees')
 class SalaryController {
   // Lấy tất cả bảng lương
   static async getAllSalaries(req, res) {
@@ -19,6 +20,22 @@ class SalaryController {
         return res.status(404).json({ message: 'Salary not found' });
       }
       res.status(200).json(salary);
+    } catch (error) {
+      res.status(500).json({ message: 'Error fetching salary', error });
+    }
+  }
+  static async getSalariesByManagerId(req, res) {
+    const { id } = req.params;
+    try {
+      const employees = await Employee.find({managerId: id}).select('_id')
+      const employeeIds = employees.map(employee => employee._id)
+      const salaries = await Salary.find(
+        {employeeId : {$in : employeeIds}}
+      ).populate('employeeId')
+      if (!salaries) {
+        return res.status(404).json({ message: 'Salary not found' });
+      }
+      res.status(200).json(salaries);
     } catch (error) {
       res.status(500).json({ message: 'Error fetching salary', error });
     }

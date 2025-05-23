@@ -11,6 +11,18 @@ class EmployeeController {
       res.status(500).json({ message: 'Error fetching employees', error });
     }
   }
+    static async getEmployeesByManagerId(req, res) {
+    const { id } = req.params;
+    try {
+      const employees = await Employee.find({managerId : id});
+      if (!employees) {
+        return res.status(404).json({ message: 'Employee not found' });
+      }
+      res.status(200).json(employees);
+    } catch (error) {
+      res.status(500).json({ message: 'Error fetching employee', error });
+    }
+  }
 
   // Lấy nhân viên theo ID
   static async getEmployeeById(req, res) {

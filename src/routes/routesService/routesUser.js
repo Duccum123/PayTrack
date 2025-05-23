@@ -8,6 +8,7 @@ const  restrictTo  = require('../../middleware/roleMiddleware');
 router.get('/', protect, restrictTo('admin'), UserController.getAllUsers);
 // Route to get a user by ID
 router.get('/:id', protect, restrictTo('admin'), UserController.getUserById);
+router.get('/getByManager/:id', protect, restrictTo('admin'), UserController.getUsersByMangerId);
 // Route to get a user by username
 router.get('/username/:username', protect, restrictTo('admin'), UserController.getUserByUsername);
 // Route to create a new user just for admin create user
