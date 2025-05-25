@@ -1,41 +1,37 @@
 const Employee = require('../models/Employees');
 const User = require('../models/Users');
+const AppError = require('../utils/AppError')
 
 class EmployeeController {
   // Lấy tất cả nhân viên
   static async getAllEmployees(req, res) {
-    try {
       const employees = await Employee.find();
+      if(employees.length === 0) throw new AppError("Không tìm thấy nhân viên", 404)
       res.status(200).json(employees);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching employees', error });
-    }
   }
-    static async getEmployeesByManagerId(req, res) {
-    const { id } = req.params;
-    try {
-      const employees = await Employee.find({managerId : id});
-      if (!employees) {
-        return res.status(404).json({ message: 'Employee not found' });
-      }
-      res.status(200).json(employees);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching employee', error });
+  static async getEmployeesByManagerId(req, res) {
+  const { id } = req.params;
+  if(!id) {
+    throw new AppError("Không có managerId", 400)
+  }
+  const employees = await Employee.find({managerId : id});
+    if (employees.length === 0) {
+      throw new AppError("Không tìm thấy nhân viên theo managerId", 404)
     }
+    res.status(200).json(employees);
   }
 
   // Lấy nhân viên theo ID
   static async getEmployeeById(req, res) {
     const { id } = req.params;
-    try {
+    if(!id) {
+    throw new AppError("Không có employeeId", 400)
+  }
       const employee = await Employee.findById(id);
       if (!employee) {
-        return res.status(404).json({ message: 'Employee not found' });
+        throw new AppError("Không tìm thấy nhân viên theo Id nhân viên", 404)
       }
       res.status(200).json(employee);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching employee', error });
-    }
   }
   // Tạo nhân viên mới
   static async createEmployee(req, res) {
@@ -45,9 +41,17 @@ class EmployeeController {
       dateOfBirth, startDate
     } = req.body;
     console.log(req.body);
-    
+    if(!name || !email || !phone || !position || !department || !basicSalary || !allowance || !gender || !dateOfBirth || !startDate) {
+      throw new AppError("Thông tin không đủ để tạo nhân viên", 400)
+    }
+    if(isNaN(dateOfBirth) || isNaN(startDate)) {
+      throw new AppError("Thông tin ngày sinh hoặc ngày bắt đầu không hợp lệ", 400)
+    }
+    const existingUserByEmail = await Employee.findOne({email})
+    if(existingUserByEmail) {
+      throw new AppError("Đã tồn tại email", 405)
+    }
       // Tạo mới nhân viên
-    try {
       const newEmployee = new Employee({
         name, email, phone, position, department,
         basicSalary, allowance, gender,
@@ -61,38 +65,44 @@ class EmployeeController {
       });
       await newUser.save();
       res.status(201).json(newUser.populate('emplyeeId'));
-    } catch (error) {
-      console.error('Error creating employee:', error);
-      res.status(500).json({ message: 'Error creating employee', error });
-    }
   }
 
   // Cập nhật nhân viên
   static async updateEmployee(req, res) {
     const { id } = req.params;
-    try {
-      const updatedEmployee = await Employee.findByIdAndUpdate(id, req.body, { new: true });
-      if (!updatedEmployee) {
-        return res.status(404).json({ message: 'Employee not found' });
+    if(!id) {
+      throw new AppError("Không có employeeId", 400)
+    }
+    const {name, email, phone, position, department, basicSalary,
+      allowance, gender, dateOfBirth, startDate
+    } = req.body;
+    if(!name || !email || !phone || !position || !department || !basicSalary || !allowance || !gender || !dateOfBirth || !startDate) {
+      throw new AppError("Thông tin không đủ để cập nhật nhân viên", 400)
+    }
+    if(isNaN(dateOfBirth) || isNaN(startDate)) {
+      throw new AppError("Thông tin ngày sinh hoặc ngày bắt đầu không hợp lệ", 400)
+    }
+    const updatedEmployee = await Employee.findByIdAndUpdate(
+      id,
+      { name, email, phone, position, department, basicSalary, allowance, gender, dateOfBirth, startDate },
+      { new: true })
+      if(!updatedEmployee) {
+        throw new AppError("Không tìm thấy nhân viên theo Id nhân viên", 404)
       }
       res.status(200).json(updatedEmployee);
-    } catch (error) {
-      res.status(500).json({ message: 'Error updating employee', error });
-    }
   }
 
   // Xóa nhân viên
   static async deleteEmployee(req, res) {
     const { id } = req.params;
-    try {
-      const deletedEmployee = await Employee.findByIdAndDelete(id);
-      if (!deletedEmployee) {
-        return res.status(404).json({ message: 'Employee not found' });
-      }
-      res.status(200).json({ message: 'Employee deleted successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error deleting employee', error });
+    if(!id) {
+      throw new AppError("Không có employeeId", 400)
     }
+    const deletedEmployee = await Employee.findByIdAndDelete(id);
+    if (!deletedEmployee) {
+      throw new AppError("Không tìm thấy nhân viên theo Id nhân viên", 404)
+    }
+    res.status(200).json({ message: 'Nhân viên đã được xóa thành công' });
   }
 }
 

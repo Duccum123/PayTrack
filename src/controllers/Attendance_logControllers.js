@@ -1,121 +1,113 @@
 const AttendanceLog = require('../models/Attendance_logs');
-const Employee = require('../models/Employees')
+const Employee = require('../models/Employees');
+const AppError = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 class AttendanceLogController {
   // Lấy tất cả bản ghi chấm công
   static async getAllAttendanceLogs(req, res) {
-    try {
-      const attendanceLogs = await AttendanceLog.find().populate('employeeId');
-      res.status(200).json(attendanceLogs);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching attendance logs', error });
+    const attendanceLogs = await AttendanceLog.find().populate('employeeId');
+    if (!attendanceLogs || attendanceLogs.length === 0) {
+      throw new AppError("Không tìm thấy attendance log", 404);
     }
+    res.status(200).json(attendanceLogs);
   }
   static async getAttendanceLogById(req, res) {
     const { id } = req.params;
-    try {
-      const attendanceLog = await AttendanceLog.findById(id).populate('employeeId');
-      if (!attendanceLog) {
-        return res.status(404).json({ message: 'Attendance log not found' });
-      }
-      res.status(200).json(attendanceLog);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching attendance log', error });
+    if(!id) {
+      throw new AppError("Không cung cấp id attendance log", 400);
     }
+    const attendanceLog = await AttendanceLog.findById(id).populate('employeeId');
+    if (!attendanceLog) {
+      throw new AppError("Không tìm thấy attendance log", 404);
+    }
+    res.status(200).json(attendanceLog);
   }
   static async getAttendanceLogsByEmployeeId(req, res) {
     const { employeeId } = req.params;
-    try {
-      const attendanceLogs = await AttendanceLog.find({ employeeId }).populate('employeeId');
-      if (!attendanceLogs) {
-        return res.status(404).json({ message: 'Attendance logs not found' });
-      }
-      res.status(200).json(attendanceLogs);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching attendance logs', error });
+    if(!employeeId) {
+      throw new AppError("Không cung cấp id attendance log", 400);
     }
-  }
-  static async getAttendanceLogsByDate(req, res) {
-  const { date, managerId } = req.body;
-  try {
-    // Lấy danh sách employeeId theo managerId
-    const employees = await Employee.find({ managerId }).select('_id');
-    const employeeIds = employees.map(emp => emp._id);
-
-    // Lấy attendance logs theo date và employeeId thuộc danh sách trên
-    const attendanceLogs = await AttendanceLog.find({
-      date: new Date(date),
-      employeeId: { $in: employeeIds }
-    }).populate('employeeId');
-
+    const attendanceLogs = await AttendanceLog.find({ employeeId }).populate('employeeId');
     if (!attendanceLogs || attendanceLogs.length === 0) {
-      return res.status(404).json({ message: 'Attendance logs not found' });
+      throw new AppError("Nhân viên này không có attendance log", 404);
     }
     res.status(200).json(attendanceLogs);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching attendance logs', error });
   }
-}
+  static async getAttendanceLogsByDate(req, res) {
+    const { date, managerId } = req.body;
+    if (!date || !managerId) {
+      throw new AppError("Thiếu thông tin ngày hoặc managerId", 400);
+    }
+    const employees = await Employee.find({ managerId }).select('_id');
+    if (!employees || employees.length === 0) {
+      throw new AppError("Không tìm thấy nhân viên theo managerId", 404);
+    }
+    const employeeIds = employees.map(emp => emp._id);
+    const attendanceLogs = await AttendanceLog.find({
+      employeeId: { $in: employeeIds },
+      date: new Date(date)
+    }).populate('employeeId');
+    if (!attendanceLogs || attendanceLogs.length === 0) {
+      throw new AppError("Không tìm thấy attendance log theo ngày" + date, 404);
+    }
+    res.status(200).json(attendanceLogs);
+  }
   static async createAttendanceLog(req, res) {
-    try {
-      const { employeeId, date, status } = req.body;
-
-      // Chuẩn hóa date về 00:00:00
-      const logDate = new Date(date);
-
-      // Kiểm tra đã tồn tại chấm công cho employeeId và ngày này chưa
-      const existingLog = await AttendanceLog.findOne({
+    const { employeeId, date, status } = req.body;
+    if (!employeeId || !date || !status) {
+      throw new AppError("Thiếu thông tin employeeId, date hoặc status", 400);
+    }
+    const logDate = new Date(date);
+    const existingLog = await AttendanceLog.findOne({
         employeeId,
         date: logDate
-      });
-      if (existingLog) {
-        return res.status(999).json({ message: 'Attendance already exists' });
-      }
-
-      let workingHours = 0;
-      if (status === 'Present') workingHours = 8;
-      else if (status === 'Half') workingHours = 4;
-
-      const newAttendanceLog = new AttendanceLog({
-        employeeId,
-        date: logDate,
-        workingHours,
-        status
-      });
-      await newAttendanceLog.save();
-      res.status(201).json(newAttendanceLog);
-    } catch (error) {
-      res.status(500).json({ message: 'Error creating attendance log', error });
+    });
+    if(existingLog) {
+      throw new AppError("Đã tồn tại bản ghi chấm công cho nhân viên này vào ngày này", 409);
     }
+    let workingHours = 0;
+    if (status === 'Present') workingHours = 8;
+    else if (status === 'Half') workingHours = 4;
+
+    const newAttendanceLog = new AttendanceLog({
+      employeeId,
+      date: logDate,
+      workingHours,
+      status
+    });
+    await newAttendanceLog.save();
+    res.status(201).json(newAttendanceLog);
   }
   static async updateAttendanceLog(req, res) {
     const { id } = req.params;
-
-    try {
-      const updatedAttendanceLog = await AttendanceLog.findByIdAndUpdate(
-        id,
-        req.body,
-        { new: true }
-      );
-      if (!updatedAttendanceLog) {
-        return res.status(999).json({ message: 'Attendance log not found' });
-      }
-      res.status(200).json(updatedAttendanceLog);
-    } catch (error) {
-      res.status(500).json({ message: 'Error updating attendance log', error });
+    if (!id) {
+      throw new AppError("Không cung cấp id attendance log", 400);
     }
+    const { employeeId, date, status } = req.body;
+    if (!employeeId || !date || !status) {
+      throw new AppError("Thiếu thông tin employeeId, date hoặc status", 400);
+    }
+    const logDate = new Date(date);
+    let workingHours = 0;
+    if (status === 'Present') workingHours = 8;
+    else if (status === 'Half') workingHours = 4;
+    const uppdatedAttendanceLog = await AttendanceLog.findByIdAndUpdate(
+      id,
+      { employeeId, date: logDate, workingHours, status },
+      { new: true }
+    ).populate('employeeId');
+    res.status(200).json(uppdatedAttendanceLog);
   }
   static async deleteAttendanceLog(req, res) {
     const { id } = req.params;
-
-    try {
-      const deletedAttendanceLog = await AttendanceLog.findByIdAndDelete(id);
-      if (!deletedAttendanceLog) {
-        return res.status(404).json({ message: 'Attendance log not found' });
-      }
-      res.status(200).json({ message: 'Attendance log deleted successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error deleting attendance log', error });
+    if(!id) {
+      throw new AppError("Không cung cấp id attendance log", 400);
     }
+    const deletedAttendanceLog = await AttendanceLog.findByIdAndDelete(id);
+    if (!deletedAttendanceLog) {
+      throw new AppError("Không tìm thấy attendance log theo Id", 404);
+    }
+    res.status(200).json("Xóa attendance log thành công");
   }
 }
 

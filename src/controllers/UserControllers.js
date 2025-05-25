@@ -1,51 +1,53 @@
 const User = require('../models/Users');
 const jwt = require('jsonwebtoken');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
-const Employee = require('../models/Employees')
+const Employee = require('../models/Employees');
+const AppError = require('../utils/AppError');
 require('dotenv').config();
 
 class UserController {
   // Đăng nhập
   static async login(req, res) {
     const { username, password } = req.body;
-    try {
-      const user = await User.findOne({ username });
-      if (!user) {
-        return res.status(401).json({ message: 'Invalid username' });
-      }
-      const isMatch = await user.matchPassword(password);
-      if (!isMatch) {
-        return res.status(401).json({ message: 'Invalid password' });
-      }
-
-      const accessToken = generateAccessToken(user);
-      const refreshToken = generateRefreshToken(user);
-
-      res.status(200).json({
-        accessToken,
-        refreshToken,
-        user: {
-          id: user._id,
-          username: user.username,
-          role: user.role,
-        },
-      });
-    } catch (error) {
-      res.status(500).json({ message: 'Error logging in', error });
+    if(!username || !password) {
+      throw new AppError("Thiếu thông tin đăng nhập", 400);
     }
+    const user = await User.findOne({ username });
+    if(!user) {
+      throw new AppError("Người dùng không tồn tại", 404);
+    }
+    const isMatch = await user.matchPassword(password);
+    if(!isMatch) {
+      throw new AppError("Mật khẩu không đúng", 401);
+    }
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    res.status(200).json({
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+      },
+    });
   }
-
   // Đăng ký - chỉ admin
   static async register(req, res) {
     console.log('Registering user:', req.body);
     const { username, password, role } = req.body;
-    try {
-      const existingUser = await User.findOne({ username });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Username already exists' });
-      }
-
-      const newUser = new User({ username, password, role });
+    if(!username || !password || !role) {
+      throw new AppError("Thiếu thông tin đăng ký", 400);
+    }
+    const existingUser = await User.findOne({ username });
+    if(existingUser) {
+      throw new AppError("Tên người dùng đã tồn tại", 400);
+    }
+      const newUser = new User({
+      username,
+      password,
+      role,
+      });
       await newUser.save();
 
       const accessToken = generateAccessToken(newUser);
@@ -60,139 +62,140 @@ class UserController {
           role: newUser.role,
         },
       });
-    } catch (error) {
-      console.error('❌ Register error:', error);
-      res.status(500).json({ message: 'Error registering user', error });
-    }
   }
 
   // Refresh token
   static async refreshToken(req, res) {
     const { refreshToken } = req.body;
     if (!refreshToken) {
-      return res.status(401).json({ message: 'Refresh token not provided' });
+      throw new AppError("Thiếu refresh token", 400);
     }
 
-    try {
-      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-      const user = await User.findById(decoded.id);
-
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      const newAccessToken = generateAccessToken(user);
-      res.status(200).json({ accessToken: newAccessToken });
-    } catch (error) {
-      res.status(500).json({ message: 'Error refreshing token', error });
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    if (!decoded) {
+      throw new AppError("Refresh token không hợp lệ", 401);
     }
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      throw new AppError("Người dùng không tồn tại", 404);
+    }
+    const accessToken = generateAccessToken(user);
+    res.status(200).json({
+      accessToken,
+      user: {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+      },
+    });
   }
 
   // Get all users
   static async getAllUsers(req, res) {
-    try {
-      const users = await User.find().populate("employeeId");
-      res.status(200).json(users);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching users', error });
+    const users = await User.find().populate('employeeId');
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: 'No users found' });
     }
+    res.status(200).json(users);
   }
   static async getUsersByMangerId(req, res) {
     const { id } = req.params
-    try {
-      const employees = await Employee.find({ managerId: id}).select('_id')
-      const employeeIds = employees.map(employ => employ._id)
-
-      const users = await User.find({
-        employeeId: {$in : employeeIds}
-      }).populate('employeeId')
-      if(!users) {
-        res.status(404).json({message : 'Users not found', error})
-      }
-      users.push(await User.findById(id))
-      res.status(200).json(users);
-    } catch(error) {
-      res.status(500).json({message : 'Erro fetching user', error})
+    if (!id) {
+      throw new AppError("Không có managerId", 400);
     }
+    const employees = await Employee.find({ managerId: id }).select('_id');
+    if (!employees || employees.length === 0) {
+      throw new AppError("Không tìm thấy nhân viên theo managerId", 404);
+    }
+    const emplyeeIds = employees.map(emp => emp._id);
+    const users = await User.find({ emplyeeId: { $in: emplyeeIds } }).populate('emplyeeId');
+    users.push(await User.findById(id));
+    res.status(200).json(users);
   }
 
   // Get user by ID
   static async getUserById(req, res) {
     const { id } = req.params;
-    try {
-      const user = await User.findById(id);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      res.status(200).json(user);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching user', error });
+    if(!id) {
+      throw new AppError("Không có userId", 400);
     }
+    const user = await User.findById(id).populate('emplyeeId');
+    if (!user) {
+      throw new AppError("Không tìm thấy người dùng theo Id", 404);
+    }
+    res.status(200).json(user);
   }
 
   // Get user by username
   static async getUserByUsername(req, res) {
     const { username } = req.params;
-    try {
-      const user = await User.findOne({ username });
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      res.status(200).json(user);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching user', error });
+    if(!username) {
+      throw new AppError("Không có username", 400);
     }
+    const user = await User.findByUsername(username);
+    if (!user) {
+      throw new AppError("Không tìm thấy người dùng theo username", 404);
+    }
+    res.status(200).json(user);
   }
 
   // Create new user
   static async createUser(req, res) {
     const { username, password, role, emplyeeId } = req.body;
-    try {
-      const existingUser = await User.findByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: 'Username already exists' });
-      }
-
-      const existingUserByEmployeeId = await User.findOne({ emplyeeId });
-      if (existingUserByEmployeeId) {
-        return res.status(400).json({ message: 'Employee ID already exists' });
-      }
-
-      const newUser = new User({ username, password, role, emplyeeId });
-      await newUser.save();
-
-      res.status(201).json(newUser);
-    } catch (error) {
-      res.status(500).json({ message: 'Error creating user', error });
+    if(!username || !password || !role || !emplyeeId) {
+      throw new AppError("Thiếu thông tin đăng ký người dùng", 400);
     }
+    const existingUserByUsername = await User.findOne({ username });
+    if(existingUserByUsername) {
+      throw new AppError("Tên người dùng đã tồn tại", 400);
+    }
+    const existingUserByEmployee = await User.findOne({ emplyeeId });
+    if(existingUserByEmployee) {
+      throw new AppError("Đã tồn tại người dùng cho id nhân viên này", 400);
+    }
+    const newUser = new User({
+      username,
+      password,
+      role,
+      emplyeeId,
+    });
+    await newUser.save();
+    res.status(201).json(newUser);
   }
 
   // Update user
   static async updateUser(req, res) {
     const { id } = req.params;
-    try {
-      const updatedUser = await User.findByIdAndUpdate(id, req.body, { new: true });
-      if (!updatedUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      res.status(200).json(updatedUser);
-    } catch (error) {
-      res.status(500).json({ message: 'Error updating user', error });
+    if(!id) {
+      throw new AppError("Không có userId", 400);
     }
+    const { username, password, role, emplyeeId } = req.body;
+    if(!username || !password || !role || !emplyeeId) {
+      throw new AppError("Thiếu thông tin cập nhật người dùng", 400);
+    }
+    const updatedUser = await User.findByIdAndUpdate(id, {
+      username,
+      password,
+      role,
+      emplyeeId,
+    }, { new: true }).populate('emplyeeId');
+    if (!updatedUser) {
+      throw new AppError("Không tìm thấy người dùng theo Id", 404);
+    }
+    res.status(200).json(updatedUser);
   }
 
   // Delete user
   static async deleteUser(req, res) {
     const { id } = req.params;
-    try {
-      const deletedUser = await User.findByIdAndDelete(id);
-      if (!deletedUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      res.status(200).json({ message: 'User deleted successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error deleting user', error });
+    if(!id) {
+      throw new AppError("Không có userId", 400);
     }
+    const deletedUser = await User.findByIdAndDelete(id);
+    if (!deletedUser) {
+      throw new AppError("Không tìm thấy người dùng theo Id", 404);
+    }
+    res.status(200).json({ message: "Xóa thành công người dùng" });
   }
 }
 
