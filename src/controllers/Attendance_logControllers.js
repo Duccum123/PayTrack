@@ -1,7 +1,6 @@
 const AttendanceLog = require('../models/Attendance_logs');
 const Employee = require('../models/Employees');
 const AppError = require('../utils/AppError');
-const AppError = require('../utils/AppError');
 class AttendanceLogController {
   // Lấy tất cả bản ghi chấm công
   static async getAllAttendanceLogs(req, res) {

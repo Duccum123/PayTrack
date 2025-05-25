@@ -9,7 +9,7 @@ const asyncHandler = require('../../middleware/asyncHandler');
 router.get('/', protect, restrictTo('admin'), asyncHandler(UserController.getAllUsers));
 // Route to get a user by ID
 router.get('/:id', protect, restrictTo('admin'), asyncHandler(UserController.getUserById));
-router.get('/getByManager/:id', protect, restrictTo('admin'), asyncHandler(UserController.getUsersByManagerId));
+router.get('/getByManager/:id', protect, restrictTo('admin'), asyncHandler(UserController.getUsersByMangerId));
 // Route to get a user by username
 router.get('/username/:username', protect, restrictTo('admin'), asyncHandler(UserController.getUserByUsername));
 // Route to create a new user just for admin create user

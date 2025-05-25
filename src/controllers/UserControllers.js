@@ -107,8 +107,12 @@ class UserController {
     if (!employees || employees.length === 0) {
       throw new AppError("Không tìm thấy nhân viên theo managerId", 404);
     }
-    const emplyeeIds = employees.map(emp => emp._id);
-    const users = await User.find({ emplyeeId: { $in: emplyeeIds } }).populate('emplyeeId');
+    const employeeIds = employees.map(emp => emp._id);
+    console.log('Employee IDs:', employeeIds);
+    const users = await User.find({ employeeId: { $in: employeeIds } }).populate('employeeId');
+    if (!users || users.length === 0) {
+      throw new AppError("Không tìm thấy người dùng theo managerId", 404);
+    }
     users.push(await User.findById(id));
     res.status(200).json(users);
   }
