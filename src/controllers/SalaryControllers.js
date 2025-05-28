@@ -104,6 +104,35 @@ class SalaryController {
     await newSalary.save();
     res.status(201).json(newSalary);
   }
+  static async getSalariesByMonthAndDepartment(req, res) {
+    const { managerId } = req.params;
+    const { month, year, department } = req.body;
+    console.log("managerId", managerId);
+    console.log("month", month);
+    console.log("year", year);
+    console.log("department", department);
+    if(!managerId || !month || !year || !department) {
+      throw new AppError("Thiếu thông tin cần lấy bảng lương", 400);
+    }
+    let query = {managerId};
+    if( department !== "all") {
+      query.department = department;
+    }
+    const employees = await Employee.find(query).select('_id');
+    if (!employees || employees.length === 0) {
+      throw new AppError("Không tìm thấy nhân viên theo managerId và department", 405);
+    }
+    const employeeIds = employees.map(emp => emp._id);
+    const salaries = await Salary.find({
+      employeeId: { $in: employeeIds },
+      month,
+      year
+    }).populate('employeeId');
+    if (!salaries || salaries.length === 0) {
+      throw new AppError("Không tìm thấy bảng lương theo tháng, năm và phòng ban", 405);
+    }
+    res.status(200).json(salaries);
+  }
   // Cập nhật bảng lương
   static async updateSalary(req, res) {
     const { id } = req.params;

@@ -13,6 +13,8 @@ router.get('/:id', protect, reStrictTo('admin'), asyncHandler(SalaryController.g
 router.get('/getByManager/:id', protect, reStrictTo('admin'), asyncHandler(SalaryController.getSalariesByManagerId));
 // Lấy bảng lương theo employeeId
 router.get('/employee/:employeeId', protect, reStrictTo('admin'), asyncHandler(SalaryController.getSalariesByEmployeeId));
+// lấy bảng lương theo tháng năm phòng ban
+router.post('/getByMonthAndDepartment/:managerId', protect, reStrictTo('admin'), asyncHandler(SalaryController.getSalariesByMonthAndDepartment));
 // Tao bảng lương mới
 router.post('/', protect, reStrictTo('admin'), asyncHandler(SalaryController.createSalary));
 // Cập nhật bảng lương
