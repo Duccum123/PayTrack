@@ -9,7 +9,6 @@ PayTrack là một ứng dụng web quản lý nhân sự và tính lương dàn
 - 💰 Tính lương tự động dựa trên công và phụ cấp
 - 👤 Quản lý tài khoản người dùng (admin và user)
 - 🔐 Xác thực người dùng bằng JWT
-- 📊 Dashboard tổng quan
 
 ## 🛠️ Công nghệ sử dụng
 
