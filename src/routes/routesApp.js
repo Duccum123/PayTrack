@@ -14,6 +14,9 @@ function routeInit(app) {
     // route to Salary
     app.use('/api/salary', salaryRoutes);
     // middleware xử lí lỗi
+    app.get('/', (req, res) => {
+        res.status(200).json({ message: 'Welcome to the Employee Management API' });
+    });
     app.use(errorHandler)
 }
 module.exports = routeInit;
