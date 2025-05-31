@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
 const Employee = require('../models/Employees');
 const AppError = require('../utils/AppError');
-require('dotenv').config();
 
 class UserController {
   // Đăng nhập
