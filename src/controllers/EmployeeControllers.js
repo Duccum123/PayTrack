@@ -44,9 +44,6 @@ class EmployeeController {
     if(!name || !email || !phone || !position || !department || !basicSalary || !allowance || !gender || !dateOfBirth || !startDate) {
       throw new AppError("Thông tin không đủ để tạo nhân viên", 400)
     }
-    if(isNaN(dateOfBirth) || isNaN(startDate)) {
-      throw new AppError("Thông tin ngày sinh hoặc ngày bắt đầu không hợp lệ", 400)
-    }
     const existingUserByEmail = await Employee.findOne({email})
     if(existingUserByEmail) {
       throw new AppError("Đã tồn tại email", 405)
