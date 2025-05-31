@@ -122,7 +122,7 @@ class UserController {
     if(!id) {
       throw new AppError("Không có userId", 400);
     }
-    const user = await User.findById(id).populate('emplyeeId');
+    const user = await User.findById(id).populate('employeeId');
     if (!user) {
       throw new AppError("Không tìm thấy người dùng theo Id", 404);
     }
@@ -144,15 +144,15 @@ class UserController {
 
   // Create new user
   static async createUser(req, res) {
-    const { username, password, role, emplyeeId } = req.body;
-    if(!username || !password || !role || !emplyeeId) {
+    const { username, password, role, employeeId } = req.body;
+    if(!username || !password || !role || !employeeId) {
       throw new AppError("Thiếu thông tin đăng ký người dùng", 400);
     }
     const existingUserByUsername = await User.findOne({ username });
     if(existingUserByUsername) {
       throw new AppError("Tên người dùng đã tồn tại", 400);
     }
-    const existingUserByEmployee = await User.findOne({ emplyeeId });
+    const existingUserByEmployee = await User.findOne({ employeeId });
     if(existingUserByEmployee) {
       throw new AppError("Đã tồn tại người dùng cho id nhân viên này", 400);
     }
@@ -160,7 +160,7 @@ class UserController {
       username,
       password,
       role,
-      emplyeeId,
+      employeeId,
     });
     await newUser.save();
     res.status(201).json(newUser);
@@ -172,16 +172,16 @@ class UserController {
     if(!id) {
       throw new AppError("Không có userId", 400);
     }
-    const { username, password, role, emplyeeId } = req.body;
-    if(!username || !password || !role || !emplyeeId) {
+    const { username, password, role, employeeId } = req.body;
+    if(!username || !password || !role || !emplooyeeId) {
       throw new AppError("Thiếu thông tin cập nhật người dùng", 400);
     }
     const updatedUser = await User.findByIdAndUpdate(id, {
       username,
       password,
       role,
-      emplyeeId,
-    }, { new: true }).populate('emplyeeId');
+      employeeId,
+    }, { new: true }).populate('employeeId');
     if (!updatedUser) {
       throw new AppError("Không tìm thấy người dùng theo Id", 404);
     }

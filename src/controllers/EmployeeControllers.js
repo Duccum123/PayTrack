@@ -55,13 +55,13 @@ class EmployeeController {
         dateOfBirth, startDate, managerId
       });
       await newEmployee.save();
-      const emplyeeId = newEmployee._id;
+      const employeeId = newEmployee._id;
       const username  = email;
       const newUser = new User({
-        username, password: 'abc123', role: 'user', emplyeeId
+        username, password: 'abc123', role: 'user', employeeId
       });
       await newUser.save();
-      res.status(201).json(newUser.populate('emplyeeId'));
+      res.status(201).json(newUser.populate('employeeId'));
   }
 
   // Cập nhật nhân viên
