@@ -38,10 +38,10 @@ class EmployeeController {
     const {
       name, email, phone, position, department,
       basicSalary, allowance, gender,
-      dateOfBirth, startDate
+      dateOfBirth, startDate, managerId
     } = req.body;
     console.log(req.body);
-    if(!name || !email || !phone || !position || !department || !basicSalary || !allowance || !gender || !dateOfBirth || !startDate) {
+    if(!name || !email || !phone || !position || !department || !basicSalary || !allowance || !gender || !dateOfBirth || !startDate || !managerId) {
       throw new AppError("Thông tin không đủ để tạo nhân viên", 400)
     }
     const existingUserByEmail = await Employee.findOne({email})
@@ -52,7 +52,7 @@ class EmployeeController {
       const newEmployee = new Employee({
         name, email, phone, position, department,
         basicSalary, allowance, gender,
-        dateOfBirth, startDate
+        dateOfBirth, startDate, managerId
       });
       await newEmployee.save();
       const emplyeeId = newEmployee._id;
